@@ -60,15 +60,13 @@ public class UserServiceImpl implements UserService {
             }
         });
 
-        if (userSave.get()) {
-            return usersRepository.save(user);
-        }
-        return user;
+        return userSave.get() ? usersRepository.save(user) : user;
     }
 
     @Override
     public User inactivateUser(String userId) throws UseException {
-        User user = usersRepository.getEntityById(userId).orElseThrow(() -> new UseException(Activity.UPDATE_USER, UseExceptionType.NOT_FOUND));
+        User user = getUser(userId)
+                .orElseThrow(() -> new UseException(Activity.UPDATE_USER, UseExceptionType.NOT_FOUND));
         user.setActive(false);
         return usersRepository.save(user);
     }
@@ -80,6 +78,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Stream<User> find(String searchString, Integer pageNumber, Integer pageSize, SortOrder sortOrder) {
-        return null;
+        Stream<User> user = ListUtils.applyPage(usersRepository.all(), pageNumber, pageSize)
+                .filter(user1 -> user1.getName().toLowerCase().contains(searchString) && user1.isActive());
+
+        return switch (sortOrder) {
+            case Name -> user.sorted(Comparator.comparing(User::getName));
+            case PersonalId -> user.sorted(Comparator.comparing(User::getPersonalIdentificationNumber));
+            default -> user;
+        };
     }
 }
