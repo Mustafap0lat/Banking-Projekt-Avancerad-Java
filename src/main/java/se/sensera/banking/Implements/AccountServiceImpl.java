@@ -40,13 +40,29 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Account addUserToAccount(String userId, String accountId, String userIdToBeAssigned) throws UseException {
-        return null;
+    public Account addUserToAccount(String userId, String accountId, String newUserId) throws UseException {
+        User newUser = getUserFromRepository(newUserId, Activity.UPDATE_ACCOUNT);
+        Account account = getAccountFromRepository(accountId, Activity.UPDATE_ACCOUNT, UseExceptionType.NOT_FOUND);
+
+        isAccountActive(account, Activity.UPDATE_ACCOUNT, UseExceptionType.ACCOUNT_NOT_ACTIVE);
+        isNewAssignedUserOwner(userId, newUser.getId());
+        isUserAssignedToAccount(newUser, account);
+        doesAccountBelongToOwner(userId, account, Activity.UPDATE_ACCOUNT);
+
+        account.addUser(newUser);
+        return accountsRepository.save(account);
     }
 
     @Override
     public Account removeUserFromAccount(String userId, String accountId, String userIdToBeAssigned) throws UseException {
-        return null;
+        Account account = getAccountFromRepository(accountId, Activity.UPDATE_ACCOUNT, UseExceptionType.NOT_FOUND);
+        User user = getUserFromRepository(userIdToBeAssigned, Activity.UPDATE_ACCOUNT);
+
+        doesAccountBelongToOwner(userId, account, Activity.UPDATE_ACCOUNT);
+        ifUserNotAssignedToAccount(userIdToBeAssigned, account);
+
+        account.removeUser(user);
+        return accountsRepository.save(account);
     }
 
     @Override
@@ -75,9 +91,30 @@ public class AccountServiceImpl implements AccountService {
         return accountsRepository.getEntityById(accountId).
                 orElseThrow(() -> new UseException(activity, useExceptionType));
     }
+
+
     private void doesAccountBelongToOwner(String userId, Account account, Activity activity) throws UseException {
         if (!account.getOwner().getId().equals(userId)) {
             throw new UseException(activity, UseExceptionType.NOT_OWNER);
+        }
+    }
+    private void isNewAssignedUserOwner(String userId, String newUserId) throws UseException {
+        if (userId.equals(newUserId)) {
+            throw new UseException(Activity.UPDATE_ACCOUNT, UseExceptionType.CANNOT_ADD_OWNER_AS_USER);
+        }
+    }
+
+    private void isUserAssignedToAccount(User newUser, Account account) throws UseException {
+        if(account.getUsers()
+                .anyMatch(user1 -> user1.getId().equals(newUser.getId()))){
+            throw new UseException(Activity.UPDATE_ACCOUNT, UseExceptionType.USER_ALREADY_ASSIGNED_TO_THIS_ACCOUNT);
+        }
+    }
+
+    private void ifUserNotAssignedToAccount(String newUserId, Account account) throws UseException {
+        if(account.getUsers()
+                .noneMatch(user1 -> user1.getId().equals(newUserId))){
+            throw new UseException(Activity.UPDATE_ACCOUNT, UseExceptionType.USER_NOT_ASSIGNED_TO_THIS_ACCOUNT);
         }
     }
 

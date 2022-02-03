@@ -38,7 +38,7 @@ public class AccountServiceUsersTest {
         usersRepository = mock(UsersRepository.class);
         accountsRepository = mock(AccountsRepository.class);
 
-        accountService = null; //TODO create Your implementing class here
+        accountService = new AccountServiceImpl(usersRepository,accountsRepository); //TODO create Your implementing class here
 
         userId = UUID.randomUUID().toString();
         otherUserId = UUID.randomUUID().toString();
