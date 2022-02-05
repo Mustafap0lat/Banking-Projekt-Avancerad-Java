@@ -5,7 +5,9 @@ import se.sensera.banking.*;
 import se.sensera.banking.exceptions.Activity;
 import se.sensera.banking.exceptions.UseException;
 import se.sensera.banking.exceptions.UseExceptionType;
+import se.sensera.banking.utils.ListUtils;
 
+import java.util.Comparator;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -79,7 +81,17 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Stream<Account> findAccounts(String searchValue, String userId, Integer pageNumber, Integer pageSize, SortOrder sortOrder) throws UseException {
-        return null;
+        Stream<Account> sortAccounts = accountsRepository.all().filter(account -> account.getName().contains(searchValue));
+        if (sortOrder.equals(SortOrder.AccountName))
+        {
+            sortAccounts = sortAccounts.sorted(Comparator.comparing(Account::getName));
+        }
+        if (userId != null)
+        {
+            sortAccounts = sortAccounts.filter(account -> account.getOwner().getId().equals(userId)
+                    || account.getUsers().anyMatch(user1 -> user1.getId().equals(userId)));
+        }
+        return ListUtils.applyPage(sortAccounts, pageNumber, pageSize);
     }
 
     private User getUserFromRepository(String userId, Activity activity) throws UseException {
@@ -137,6 +149,7 @@ public class AccountServiceImpl implements AccountService {
         });
     }
 
+
     private void isAccountNameUnique(String accountName) throws UseException {
         if (accountsRepository.all()
                 .anyMatch(account1 -> account1.getName().equals(accountName)))
@@ -148,5 +161,6 @@ public class AccountServiceImpl implements AccountService {
             throw new UseException(activity, useExceptionType);
         }
     }
+
 
 }
