@@ -47,7 +47,7 @@ public class AccountServiceFindTest {
         usersRepository = mock(UsersRepository.class);
         accountsRepository = mock(AccountsRepository.class);
 
-        accountService = null; //TODO create Your implementing class here
+        accountService = new AccountServiceImpl(usersRepository,accountsRepository); //TODO create Your implementing class here
 
         Stream.of(LISA,ARNE,GULLBRITT,BEDA,SVEN)
                 .forEach(user -> when(usersRepository.getEntityById(eq(user.getId()))).thenReturn(Optional.of(user)));
