@@ -31,7 +31,7 @@ public class UserServiceTest {
         //TODO Måste skickas med som en parameter i UserService constructor
         usersRepository = mock(UsersRepository.class);
 
-        userService = null; //TODO create Your implementing class here
+        userService = new UserServiceImpl(usersRepository); //TODO create Your implementing class here
 
         userId = UUID.randomUUID().toString();
         user = mock(User.class);
